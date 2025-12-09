@@ -3,7 +3,7 @@
 A simple, client-side web tool to visualize your learning progress on [OpenRussian](https://en.openrussian.org/).
 
 **[🚀 Launch Web Analyzer](https://towbyxo3.github.io/openrussian-vocabulary-analysis/)**  
-([View Example Report](https://towbyxo3.github.io/openrussian-vocabulary-analysis/example.html))
+([View Example Report](https://towbyxo3.github.io/openrussian-vocabulary-analysis/assets/example.html))
 
 ### How to get your data
 Since OpenRussian doesn't have an export button (yet), we just grab the data the website uses.
@@ -16,9 +16,9 @@ Since OpenRussian doesn't have an export button (yet), we just grab the data the
 6.  Right-click it -> **Copy Response** (or copy the content from the Response tab).
 7.  Paste it into a text file and save it as `.json` (e.g., `my_vocab.json`).
 
-![How to find the json file](json.png)
+![How to find the json file](assets/json.png)
 
-8.  Drop that file into the [website](https://towbyxo3.github.io/russian-vocabulary-analysis/).
+8.  Drop that file into the [website](https://towbyxo3.github.io/openrussian-vocabulary-analysis/).
 
 ---
 *Credit to [OpenRussian](https://en.openrussian.org/) for providing the excellent learning platform and database.*
