@@ -8,7 +8,7 @@ import numpy as np
 from datetime import timedelta
 
 # --- Configuration ---
-OUTPUT_DIR = "vocabulary_report"
+OUTPUT_DIR = "output"
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 

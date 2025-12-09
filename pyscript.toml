@@ -1,6 +1,7 @@
 packages = ["pandas", "numpy", "plotly"]
 
 [[fetch]]
+from = "src"
 files = ["analyze_vocabulary.py"]
 
 [[fetch]]
