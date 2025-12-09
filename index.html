@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russian Vocabulary Analysis (Web)</title>
+
+    <!-- Plotly (Required for graphs) -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <!-- PyScript -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .upload-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            margin-top: 50px;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            color: #2c3e50;
+        }
+
+        p {
+            color: #7f8c8d;
+        }
+
+        .drop-zone {
+            border: 2px dashed #bdc3c7;
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin-top: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #3498db;
+            background: #f0f9ff;
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .btn-upload {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 15px;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 20px;
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        /* Report Container - Fill screen when loaded */
+        #report-output {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 30px;
+            display: none;
+        }
+
+        /* Hide original container when report is shown */
+        body.report-active .upload-container {
+            display: none;
+        }
+
+        body.report-active #report-output {
+            display: block;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="upload-container" id="main-card">
+        <h1>📊 Russian Vocabulary Analysis</h1>
+        <p>Drop your <code>my_russian_words.json</code> file to generate your report instantly.</p>
+
+        <!-- Timezone Selector -->
+        <div style="margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <label for="timezone-offset" style="color: #7f8c8d; font-size: 0.9rem;">Timezone:</label>
+            <select id="timezone-offset"
+                style="padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; background: #fff; color: #2c3e50; font-family: 'Inter', sans-serif;">
+                <!-- Populated by JS -->
+            </select>
+        </div>
+
+        <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-upload" accept=".json">
+            <div style="font-size: 3rem; margin-bottom: 10px;">📂</div>
+            <div><strong>Choose a file</strong> or drag it here</div>
+        </div>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <div>Crunching the numbers... (This may take a few seconds)</div>
+        </div>
+
+        <div style="margin-top: 30px; font-size: 0.85rem; color: #95a5a6;">
+            Processing happens entirely in your browser. Your data is never uploaded.
+        </div>
+    </div>
+
+    <!-- Error Log -->
+    <div id="error-log"
+        style="color: red; background: #fee; padding: 10px; border-radius: 8px; margin-top: 20px; display: none; max-width: 800px; white-space: pre-wrap;">
+    </div>
+
+    <!-- Share / Controls (Hidden until report loaded) -->
+    <div id="report-controls"
+        style="display: none; margin-bottom: 20px; text-align: right; width: 100%; max-width: 1200px;">
+        <button onclick="window.print()" class="btn-action" style="background: #2c3e50; color: white;">🖨️ Print /
+            PDF</button>
+        <button onclick="downloadReport()" class="btn-action" style="background: #27ae60; color: white;">💾 Save
+            HTML</button>
+    </div>
+
+    <div id="report-output"></div>
+
+    <style>
+        .btn-action {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-left: 10px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        @media print {
+
+            .upload-container,
+            #report-controls,
+            #error-log {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            #report-output {
+                display: block !important;
+                margin: 0;
+                width: 100%;
+                max-width: none;
+            }
+
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                break-inside: avoid;
+            }
+        }
+    </style>
+
+    <!-- PYSCRIPT CONFIG & LOGIC -->
+    <script type="py" id="main-script" config="./pyscript.toml">
+import asyncio
+import json
+import js
+from pyscript import document
+from pyodide.ffi import create_proxy
+import analyze_vocabulary
+import traceback
+
+def log_error(msg):
+    err_div = document.getElementById("error-log")
+    err_div.style.display = "block"
+    err_div.innerText += msg + "\n"
+
+async def handle_file_upload(event):
+    file_list = event.target.files
+    if not file_list: return
+
+    file = file_list.item(0)
+    
+    # UI Updates
+    document.getElementById("loading").style.display = "block"
+    document.getElementById("drop-zone").style.display = "none"
+    document.getElementById("error-log").style.display = "none"
+    document.getElementById("error-log").innerText = ""
+
+    # Read file content
+    try:
+        content = await file.text()
+        user_data = json.loads(content)
+        
+        # Get Timezone Offset
+        offset_val = document.getElementById("timezone-offset").value
+        utc_offset = int(offset_val) if offset_val else 0
+        
+        # Run Analysis
+        # Yield to allow UI update
+        await asyncio.sleep(0.1)
+        
+        try:
+            html_report = analyze_vocabulary.generate_report(user_data, data_dir="data", utc_offset=utc_offset)
+        except Exception as e:
+            log_error(f"Python Error during analysis:\n{traceback.format_exc()}")
+            document.getElementById("loading").style.display = "none"
+            document.getElementById("drop-zone").style.display = "block"
+            return
+            
+        if html_report.startswith("<h3>Error"):
+             log_error(f"Analysis returned error: {html_report}")
+             document.getElementById("loading").style.display = "none"
+             document.getElementById("drop-zone").style.display = "block"
+             return
+
+        # Inject HTML
+        output_div = document.getElementById("report-output")
+        output_div.innerHTML = html_report
+        
+        # Switch View
+        document.body.classList.add("report-active")
+        document.getElementById("report-controls").style.display = "block"
+        
+        # Yield to let browser layout happen
+        await asyncio.sleep(0.1)
+        
+        # Execute scripts in the injected HTML (using JS helper)
+        js.executeScripts(output_div)
+
+    except Exception as e:
+        log_error(f"General Error:\n{str(e)}")
+        document.getElementById("loading").style.display = "none"
+        document.getElementById("drop-zone").style.display = "block"
+
+# Attach event listener
+file_input = document.getElementById("file-upload")
+upload_proxy = create_proxy(handle_file_upload)
+file_input.addEventListener("change", upload_proxy)
+
+    </script>
+
+    <!-- JS Helper for Script Execution -->
+    <script>
+        // Populate Timezones
+        (function () {
+            const select = document.getElementById("timezone-offset");
+            const userOffset = -new Date().getTimezoneOffset() / 60; // Minutes to hours, inverted
+
+            for (let i = -12; i <= 14; i++) {
+                const option = document.createElement("option");
+                option.value = i;
+                const sign = i >= 0 ? "+" : "";
+                option.text = `UTC${sign}${i}`;
+                if (i === userOffset || (i === 0 && userOffset === 0)) { // Simple match, floats might miss e.g. India (5.5) but strictly sticking to ints for now as per Python logic
+                    // Handle half-hour zones roughly by selecting nearest int for now
+                    if (Math.round(userOffset) === i) option.selected = true;
+                }
+                select.appendChild(option);
+            }
+        })();
+
+        function downloadReport() {
+            const title = "MyRussian_Vocabulary_Report.html";
+            const htmlContent = document.getElementById("report-output").innerHTML;
+            const fullContent = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Vocabulary Report</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"><\/script>
+</head>
+<body>
+${htmlContent}
+</body>
+</html>`;
+
+            const blob = new Blob([fullContent], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = title;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function executeScripts(container) {
+            console.log("Starting script execution...");
+
+            // 1. Find all script tags
+            const scripts = container.getElementsByTagName("script");
+            const scriptArray = Array.from(scripts); // Copy live collection
+
+            let count = 0;
+            scriptArray.forEach(oldScript => {
+                const newScript = document.createElement("script");
+
+                // Copy attributes
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+
+                // Copy content
+                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+
+                // Replace in DOM - this triggers execution
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+                count++;
+            });
+
+            console.log(`Replaced and executed ${count} scripts.`);
+
+            // 2. Force Resize after a short delay to allow plots to render
+            setTimeout(() => {
+                console.log("Triggering resize...");
+                window.dispatchEvent(new Event('resize'));
+
+                // Also explicitly resize any Plotly divs found
+                const plots = document.getElementsByClassName("plotly-graph-div"); // Plotly adds this class
+                Array.from(plots).forEach(p => {
+                    if (window.Plotly) Plotly.Plots.resize(p);
+                });
+            }, 500);
+        }
+    </script>
+
+</body>
+
+</html>

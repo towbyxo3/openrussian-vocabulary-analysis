@@ -1,0 +1,9 @@
+packages = ["pandas", "numpy", "plotly"]
+
+[[fetch]]
+files = ["analyze_vocabulary.py"]
+
+[[fetch]]
+from = "data"
+to_folder = "data"
+files = ["russian3 - words.csv", "russian3 - nouns.csv", "russian3 - verbs.csv", "russian3 - words_rels.csv"]
